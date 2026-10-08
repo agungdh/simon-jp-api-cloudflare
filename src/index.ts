@@ -7,9 +7,11 @@ import { AuthRegister } from "./endpoints/authRegister";
 import { PegawaiCreate } from "./endpoints/pegawaiCreate";
 import { PegawaiDelete } from "./endpoints/pegawaiDelete";
 import { PegawaiFetch } from "./endpoints/pegawaiFetch";
+import { PegawaiFotoConfirm } from "./endpoints/pegawaiFotoConfirm";
+import { PegawaiFotoPresign } from "./endpoints/pegawaiFotoPresign";
 import { PegawaiList } from "./endpoints/pegawaiList";
 import { PegawaiUpdate } from "./endpoints/pegawaiUpdate";
-import { fotoDelete, fotoGet, fotoPut } from "./routes/foto";
+import { fotoDelete, fotoGet } from "./routes/foto";
 
 // Start a Hono app
 const app = new Hono<{ Bindings: Env }>();
@@ -32,8 +34,10 @@ openapi.get("/api/pegawai/:id", PegawaiFetch);
 openapi.put("/api/pegawai/:id", PegawaiUpdate);
 openapi.delete("/api/pegawai/:id", PegawaiDelete);
 
-// Foto: binary/multipart, tidak cocok untuk schema OpenAPI JSON -> route Hono biasa
-app.put("/api/pegawai/:id/foto", (c) => fotoPut(c));
+openapi.post("/api/pegawai/:id/foto/presign", PegawaiFotoPresign);
+openapi.post("/api/pegawai/:id/foto/confirm", PegawaiFotoConfirm);
+
+// Foto: GET/DELETE binary, tidak cocok untuk schema OpenAPI JSON -> route Hono biasa
 app.get("/api/pegawai/:id/foto", (c) => fotoGet(c));
 app.delete("/api/pegawai/:id/foto", (c) => fotoDelete(c));
 

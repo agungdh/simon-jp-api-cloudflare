@@ -1,0 +1,5 @@
+# Salin jadi `.dev.vars` lalu isi dengan kredensial asli (jangan commit!).
+# Dashboard: R2 → API Tokens → Create API Token (Object Read & Write, bucket simonjp).
+R2_ACCESS_KEY_ID=dummy-local-key-id
+R2_SECRET_ACCESS_KEY=dummy-local-secret
+R2_ACCOUNT_ID=dummy-local-account-id

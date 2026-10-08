@@ -47,5 +47,25 @@ List pakai **cursor pagination** (`id < cursor ORDER BY id DESC`) untuk infinite
 | GET | `/api/pegawai/:id/foto` | admin, user |
 | DELETE | `/api/pegawai/:id/foto` | admin |
 
+## Upload foto via presigned URL
+
+Alur (FE upload langsung ke R2, tidak lewat Worker):
+
+1. `POST /api/pegawai/:id/foto/presign` (admin, body `{contentType: image/jpeg|png|webp}`)
+   → `{uploadUrl, foto_key, expiresIn: 300}`
+2. FE `PUT uploadUrl` dengan header `Content-Type` yang sama (tipe lain ditolak R2).
+3. `POST /api/pegawai/:id/foto/confirm` (admin) → verifikasi objek ada di R2, lalu tautkan `foto_key`.
+
+Setup kredensial (tidak perlu untuk endpoint lain):
+
+1. Dashboard R2 → API Tokens → token Object Read & Write untuk bucket `simonjp`.
+2. Lokal: `cp .dev.vars.example .dev.vars` lalu isi `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ACCOUNT_ID`.
+3. Remote: `wrangler secret put R2_ACCESS_KEY_ID` (dst, 3x).
+4. Bucket `simonjp` → Settings → CORS agar browser bisa PUT langsung:
+
+```json
+[{ "AllowedOrigins": ["https://fe-domain-kamu"], "AllowedMethods": ["PUT"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+```
+
 Catatan FE: deploy FE satu origin dengan API (Worker + assets / domain yang sama)
 agar cookie `SameSite=Lax` terkirim tanpa CORS khusus.
