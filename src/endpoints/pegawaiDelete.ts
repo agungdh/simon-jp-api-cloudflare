@@ -26,7 +26,7 @@ export class PegawaiDelete extends OpenAPIRoute {
 
 		await c.env.DB.prepare(`DELETE FROM pegawai WHERE id = ?`).bind(data.params.id).run();
 		if (row.foto_key) {
-			await c.env.FOTO_BUCKET.delete(row.foto_key).catch(() => {});
+			await c.env.SIMONJP_BUCKET.delete(row.foto_key).catch(() => {});
 		}
 		return c.json({ success: true });
 	}

@@ -39,7 +39,7 @@ export async function fotoPut(c: AppContext) {
 	}
 
 	const key = fotoKeyFor(id);
-	await c.env.FOTO_BUCKET.put(key, bytes, { httpMetadata: { contentType } });
+	await c.env.SIMONJP_BUCKET.put(key, bytes, { httpMetadata: { contentType } });
 	await c.env.DB.prepare(
 		`UPDATE pegawai SET foto_key = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`,
 	)
@@ -58,7 +58,7 @@ export async function fotoGet(c: AppContext) {
 		.first<{ foto_key: string | null }>();
 	if (!row || !row.foto_key) throw new NotFoundException("foto tidak ditemukan");
 
-	const obj = await c.env.FOTO_BUCKET.get(row.foto_key);
+	const obj = await c.env.SIMONJP_BUCKET.get(row.foto_key);
 	if (!obj) throw new NotFoundException("foto tidak ditemukan");
 
 	const headers = new Headers();
@@ -77,7 +77,7 @@ export async function fotoDelete(c: AppContext) {
 		.first<{ foto_key: string | null }>();
 	if (!row) throw new NotFoundException("pegawai tidak ditemukan");
 	if (row.foto_key) {
-		await c.env.FOTO_BUCKET.delete(row.foto_key).catch(() => {});
+		await c.env.SIMONJP_BUCKET.delete(row.foto_key).catch(() => {});
 	}
 	await c.env.DB.prepare(
 		`UPDATE pegawai SET foto_key = NULL, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?`,

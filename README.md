@@ -5,17 +5,17 @@ Cloudflare Worker + Hono + Chanfana (OpenAPI 3.1) + D1 + R2.
 ## Setup lokal
 
 1. `npm install`
-2. `npx wrangler d1 migrations apply simon-jp-db --local`
+2. `npx wrangler d1 migrations apply simonjp --local`
 3. `npx wrangler dev` → Swagger di `http://localhost:8787/`
 
 ## Setup remote (deploy)
 
-`wrangler.jsonc` masih pakai `database_id: "local-simon-jp-db"` (placeholder lokal).
+`wrangler.jsonc` masih pakai `database_id: "local-simonjp"` (placeholder lokal).
 
 1. `wrangler login`
-2. `npx wrangler d1 create simon-jp-db` → isi `database_id` di `wrangler.jsonc`, lalu `npx wrangler types`
-3. `npx wrangler r2 bucket create simon-jp-foto`
-4. `npx wrangler d1 migrations apply simon-jp-db --remote`
+2. `npx wrangler d1 create simonjp` → isi `database_id` di `wrangler.jsonc`, lalu `npx wrangler types`
+3. `npx wrangler r2 bucket create simonjp`
+4. `npx wrangler d1 migrations apply simonjp --remote`
 5. `npx wrangler deploy`
 
 ## Auth

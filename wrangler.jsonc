@@ -14,15 +14,15 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "simon-jp-db",
-			"database_id": "local-simon-jp-db",
+			"database_name": "simonjp",
+			"database_id": "local-simonjp",
 			"migrations_dir": "migrations"
 		}
 	],
 	"r2_buckets": [
 		{
-			"binding": "FOTO_BUCKET",
-			"bucket_name": "simon-jp-foto"
+			"binding": "SIMONJP_BUCKET",
+			"bucket_name": "simonjp"
 		}
 	]
 	/**
