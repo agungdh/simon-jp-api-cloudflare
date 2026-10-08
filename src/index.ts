@@ -4,13 +4,33 @@ import { AuthLogin } from "./endpoints/authLogin";
 import { AuthLogout } from "./endpoints/authLogout";
 import { AuthMe } from "./endpoints/authMe";
 import { AuthRegister } from "./endpoints/authRegister";
-import { PegawaiCreate } from "./endpoints/pegawaiCreate";
-import { PegawaiDelete } from "./endpoints/pegawaiDelete";
-import { PegawaiFetch } from "./endpoints/pegawaiFetch";
+import { Dashboard } from "./endpoints/dashboard";
+import {
+	BelajarMandiriEp,
+	BidangEp,
+	CoachingEp,
+	DiklatEp,
+	JenisEp,
+	LcEp,
+	MateriPpmEp,
+	MentoringEp,
+	PangkatEp,
+	PpmEp,
+	SeminarEp,
+	WebinarEp,
+	WorkshopEp,
+} from "./endpoints/modules";
+import {
+	PegawaiCreate,
+	PegawaiDelete,
+	PegawaiFetch,
+	PegawaiList,
+	PegawaiUpdate,
+} from "./endpoints/pegawai";
 import { PegawaiFotoConfirm } from "./endpoints/pegawaiFotoConfirm";
 import { PegawaiFotoPresign } from "./endpoints/pegawaiFotoPresign";
-import { PegawaiList } from "./endpoints/pegawaiList";
-import { PegawaiUpdate } from "./endpoints/pegawaiUpdate";
+import { UploadPresign } from "./endpoints/uploadPresign";
+import { downloadArsip } from "./routes/download";
 import { fotoDelete, fotoGet } from "./routes/foto";
 
 // Start a Hono app
@@ -27,34 +47,77 @@ openapi.post("/api/auth/login", AuthLogin);
 openapi.post("/api/auth/logout", AuthLogout);
 openapi.get("/api/auth/me", AuthMe);
 
-// Pegawai CRUD (cursor pagination, foto opsional terpisah)
+// Dashboard
+openapi.get("/api/dashboard", Dashboard);
+
+// Pegawai
 openapi.get("/api/pegawai", PegawaiList);
 openapi.post("/api/pegawai", PegawaiCreate);
 openapi.get("/api/pegawai/:id", PegawaiFetch);
 openapi.put("/api/pegawai/:id", PegawaiUpdate);
 openapi.delete("/api/pegawai/:id", PegawaiDelete);
-
 openapi.post("/api/pegawai/:id/foto/presign", PegawaiFotoPresign);
 openapi.post("/api/pegawai/:id/foto/confirm", PegawaiFotoConfirm);
-
-// Foto: GET/DELETE binary, tidak cocok untuk schema OpenAPI JSON -> route Hono biasa
 app.get("/api/pegawai/:id/foto", (c) => fotoGet(c));
 app.delete("/api/pegawai/:id/foto", (c) => fotoDelete(c));
 
-// Format ApiException (401/403/404/...) juga untuk route Hono biasa (foto).
-// Tanpa ini, throw di route biasa jadi 500 polos.
-app.onError((err, c) => {
+// Master
+function crud(prefix: string, ep: Record<"List" | "Create" | "Fetch" | "Update" | "Delete", unknown>) {
+	openapi.get(prefix, ep.List as never);
+	openapi.post(prefix, ep.Create as never);
+	openapi.get(`${prefix}/:id`, ep.Fetch as never);
+	openapi.put(`${prefix}/:id`, ep.Update as never);
+	openapi.delete(`${prefix}/:id`, ep.Delete as never);
+}
+
+crud("/api/bidang", BidangEp);
+crud("/api/pangkat-golongan", PangkatEp);
+crud("/api/jenis-pelatihan", JenisEp);
+
+// Aktivitas
+crud("/api/diklat", DiklatEp);
+crud("/api/ppm", PpmEp);
+crud("/api/seminar", SeminarEp);
+crud("/api/webinar", WebinarEp);
+crud("/api/lc", LcEp);
+crud("/api/belajar-mandiri", BelajarMandiriEp);
+crud("/api/mentoring", MentoringEp);
+crud("/api/coaching", CoachingEp);
+crud("/api/workshop", WorkshopEp);
+crud("/api/materi-ppm", MateriPpmEp);
+
+// Upload arsip + download (arsip binary via route Hono biasa)
+openapi.post("/api/upload/presign", UploadPresign);
+app.get("/api/download/:module/:id", (c) => downloadArsip(c));
+
+type ApiErrorShape = { code: number; message: string };
+
+// Format error seragam {error:{code,message}} — tanpa envelope `success`.
+app.onError(async (err, c) => {
 	if (err instanceof ApiException) {
-		return c.json({ success: false, errors: err.buildResponse(), result: {} }, err.status as never);
+		return c.json(
+			{ error: toShape(err.code, err.isVisible ? err.message || err.default_message : "Internal Error") },
+			err.status as never,
+		);
 	}
-	// Error dari route OpenAPI dibungkus Chanfana jadi Hono HTTPException
-	const res = (err as unknown as { getResponse?: unknown }).getResponse;
-	if (typeof res === "function") {
-		return (err as { getResponse(): Response }).getResponse();
+	const getResponse = (err as unknown as { getResponse?: unknown }).getResponse;
+	if (typeof getResponse === "function") {
+		try {
+			const res = (err as unknown as { getResponse(): Response }).getResponse();
+			const body = (await res.json()) as { errors?: ApiErrorShape[] };
+			const first = body?.errors?.[0];
+			if (first) return c.json({ error: { code: first.code, message: first.message } }, res.status as never);
+		} catch {
+			// abaikan, jatuh ke 500 generik di bawah
+		}
 	}
 	console.error(err);
-	return c.json({ success: false, errors: [{ code: 7000, message: "Internal Error" }], result: {} }, 500);
+	return c.json({ error: { code: 7000, message: "Internal Error" } }, 500);
 });
+
+function toShape(code: number, message: string): ApiErrorShape {
+	return { code, message };
+}
 
 // Export the Hono app
 export default app;

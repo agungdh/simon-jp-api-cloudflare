@@ -1,5 +1,4 @@
 import { OpenAPIRoute, UnauthorizedException } from "chanfana";
-import { z } from "zod";
 import { generateOpaqueToken, sha256Hex, verifyPassword } from "../lib/crypto";
 import { SESSION_TTL_MS, setSessionCookie } from "../lib/session";
 import { type AppContext, LoginInput, PublicUser } from "../types";
@@ -14,7 +13,7 @@ export class AuthLogin extends OpenAPIRoute {
 		responses: {
 			"200": {
 				description: "Login sukses",
-				content: { "application/json": { schema: z.object({ success: z.boolean(), user: PublicUser }) } },
+				content: { "application/json": { schema: PublicUser } },
 			},
 		},
 	};
@@ -43,8 +42,10 @@ export class AuthLogin extends OpenAPIRoute {
 
 		setSessionCookie(c, rawToken);
 		return c.json({
-			success: true,
-			user: { id: row.id, username: row.username, role: row.role, created_at: row.created_at },
+			id: row.id,
+			username: row.username,
+			role: row.role,
+			created_at: row.created_at,
 		});
 	}
 }

@@ -10,7 +10,7 @@ export class AuthLogout extends OpenAPIRoute {
 		responses: {
 			"200": {
 				description: "Logout sukses",
-				content: { "application/json": { schema: z.object({ success: z.boolean() }) } },
+				content: { "application/json": { schema: z.object({}) } },
 			},
 		},
 	};
@@ -21,6 +21,6 @@ export class AuthLogout extends OpenAPIRoute {
 			await c.env.DB.prepare(`DELETE FROM sessions WHERE token_hash = ?`).bind(sess.tokenHash).run();
 		}
 		clearSessionCookie(c);
-		return c.json({ success: true });
+		return c.json({});
 	}
 }

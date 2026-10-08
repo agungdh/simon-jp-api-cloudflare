@@ -14,9 +14,7 @@ export class PegawaiFotoConfirm extends OpenAPIRoute {
 			"200": {
 				description: "Foto terkonfirmasi dan tertaut ke pegawai",
 				content: {
-					"application/json": {
-						schema: z.object({ success: z.boolean(), foto_key: z.string() }),
-					},
+					"application/json": { schema: z.object({ foto_key: z.string() }) },
 				},
 			},
 		},
@@ -32,7 +30,6 @@ export class PegawaiFotoConfirm extends OpenAPIRoute {
 			.first<{ foto_key: string | null }>();
 		if (!row) throw new NotFoundException("pegawai tidak ditemukan");
 
-		// foto_key ditulis saat presign; pastikan objeknya benar-benar ada di R2.
 		const key = `pegawai/${id}.jpg`;
 		const obj = await c.env.SIMONJP_BUCKET.head(key);
 		if (!obj) {
@@ -44,6 +41,6 @@ export class PegawaiFotoConfirm extends OpenAPIRoute {
 		)
 			.bind(key, id)
 			.run();
-		return c.json({ success: true, foto_key: key });
+		return c.json({ foto_key: key });
 	}
 }

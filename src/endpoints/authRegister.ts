@@ -1,6 +1,5 @@
 import { ConflictException, OpenAPIRoute } from "chanfana";
-import { z } from "zod";
-import { hashPassword, generateSaltHex } from "../lib/crypto";
+import { generateSaltHex, hashPassword } from "../lib/crypto";
 import { requireAuth } from "../lib/session";
 import { type AppContext, PublicUser, RegisterInput } from "../types";
 
@@ -14,7 +13,7 @@ export class AuthRegister extends OpenAPIRoute {
 		responses: {
 			"201": {
 				description: "User dibuat",
-				content: { "application/json": { schema: z.object({ success: z.boolean(), user: PublicUser }) } },
+				content: { "application/json": { schema: PublicUser } },
 			},
 		},
 	};
@@ -31,7 +30,6 @@ export class AuthRegister extends OpenAPIRoute {
 		}
 
 		const finalRole = isBootstrap && role !== "admin" ? "admin" : role;
-		// Bootstrap: user pertama selalu admin agar tidak terkunci.
 
 		const salt = generateSaltHex();
 		const password_hash = await hashPassword(password, salt);
@@ -47,8 +45,8 @@ export class AuthRegister extends OpenAPIRoute {
 				`SELECT id, username, role, created_at FROM users WHERE id = ?`,
 			)
 				.bind(id)
-				.first<{ id: number; username: string; role: "admin" | "user"; created_at: string }>();
-			return c.json({ success: true, user: row }, 201);
+				.first();
+			return c.json(row, 201);
 		} catch (e: unknown) {
 			if (e instanceof Error && e.message.includes("UNIQUE")) {
 				throw new ConflictException("username sudah dipakai");

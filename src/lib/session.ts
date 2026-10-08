@@ -16,6 +16,8 @@ export type SessionUser = {
 
 export type SessionInfo = {
 	user: SessionUser;
+	/** id baris pegawai milik user ini; null untuk admin tanpa baris pegawai */
+	pegawaiId: number | null;
 	tokenHash: string;
 	expiresAt: number;
 };
@@ -48,7 +50,8 @@ export async function getSession(c: AppContext): Promise<SessionInfo | null> {
 	const tokenHash = await sha256Hex(raw);
 	const row = await c.env.DB.prepare(
 		`SELECT s.token_hash AS token_hash, s.expires_at AS expires_at,
-			u.id AS id, u.username AS username, u.role AS role, u.created_at AS created_at
+			u.id AS id, u.username AS username, u.role AS role, u.created_at AS created_at,
+			(SELECT p.id FROM pegawai p WHERE p.user_id = u.id) AS pegawai_id
 		 FROM sessions s JOIN users u ON u.id = s.user_id
 		 WHERE s.token_hash = ?`,
 	)
@@ -60,6 +63,7 @@ export async function getSession(c: AppContext): Promise<SessionInfo | null> {
 			username: string;
 			role: UserRole;
 			created_at: string;
+			pegawai_id: number | null;
 		}>();
 	if (!row) return null;
 	if (row.expires_at <= Date.now()) {
@@ -68,6 +72,7 @@ export async function getSession(c: AppContext): Promise<SessionInfo | null> {
 	}
 	return {
 		user: { id: row.id, username: row.username, role: row.role, created_at: row.created_at },
+		pegawaiId: row.pegawai_id,
 		tokenHash: row.token_hash,
 		expiresAt: row.expires_at,
 	};
@@ -75,10 +80,20 @@ export async function getSession(c: AppContext): Promise<SessionInfo | null> {
 
 export async function requireAuth(c: AppContext, role?: UserRole | UserRole[]): Promise<SessionInfo> {
 	const sess = await getSession(c);
-	if (!sess) throw new UnauthorizedException("unauthorized");
+	if (!sess) throw new UnauthorizedException();
 	if (role) {
 		const allowed = Array.isArray(role) ? role : [role];
-		if (!allowed.includes(sess.user.role)) throw new ForbiddenException("forbidden");
+		if (!allowed.includes(sess.user.role)) throw new ForbiddenException();
 	}
 	return sess;
+}
+
+/**
+ * Filter kepemilikan ala ScopesByPegawai: admin bebas (null = tanpa filter),
+ * user biasa wajib pegawai_id miliknya. User tanpa baris pegawai -> 403.
+ */
+export function ownerFilter(sess: SessionInfo): number | null {
+	if (sess.user.role === "admin") return null;
+	if (sess.pegawaiId === null) throw new ForbiddenException("akun belum tertaut pegawai");
+	return sess.pegawaiId;
 }

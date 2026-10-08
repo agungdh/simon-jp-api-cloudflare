@@ -29,7 +29,6 @@ export class PegawaiFotoPresign extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							success: z.boolean(),
 							uploadUrl: z.string(),
 							foto_key: z.string(),
 							expiresIn: z.number().int(),
@@ -55,6 +54,6 @@ export class PegawaiFotoPresign extends OpenAPIRoute {
 
 		const key = fotoKeyFor(id);
 		const uploadUrl = await presignedPutUrl(cfg, key, data.body.contentType);
-		return c.json({ success: true, uploadUrl, foto_key: key, expiresIn: PRESIGN_EXPIRES_IN });
+		return c.json({ uploadUrl, foto_key: key, expiresIn: PRESIGN_EXPIRES_IN });
 	}
 }

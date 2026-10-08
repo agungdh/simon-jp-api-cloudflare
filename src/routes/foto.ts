@@ -38,5 +38,5 @@ export async function fotoDelete(c: AppContext) {
 	)
 		.bind(id)
 		.run();
-	return c.json({ success: true });
+	return c.json({ id });
 }
